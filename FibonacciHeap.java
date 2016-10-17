@@ -10,6 +10,7 @@ public class FibonacciHeap {
     private FibonacciNode maxNode;
     private int numOfNodes;
     private int maxDegree;
+    Hashtable<String, FibonacciNode> fibTable = new Hashtable<String, FibonacciNode>();
     
     public FibonacciHeap() {
         maxNode = null;
@@ -36,6 +37,11 @@ public class FibonacciHeap {
         System.out.println("Inserting node: " + hashtag + "," + count);
         FibonacciNode currentNode = new FibonacciNode(hashtag, count);
         currentNode.hashtagCountKey = count;
+        // Store node info in hashtable
+        //System.out.println("Putting in hashtable: " + hashtag + "," + currentNode);
+        fibTable.put(hashtag, currentNode);
+
+        // Finding max node
         if (maxNode != null) {
             currentNode.leftSiblingNode = maxNode;
             currentNode.rightSiblingNode = maxNode.rightSiblingNode;
@@ -56,9 +62,9 @@ public class FibonacciHeap {
         //System.out.println("MAX NODE FROM INSERT: " + maxNode.hashtagCountKey);
     }
     
-    public void removeNode(FibonacciNode currentNode) {
+    /*public void removeNode(FibonacciNode currentNode) {
         
-    }
+    }*/
     
     // If the heap order is not violated, just increase the key of the node
     // Otherwise, cut the tree rooted at the currentNode and meld into root list
@@ -73,6 +79,10 @@ public class FibonacciHeap {
             cut(currentNode, parentNodeOfCurrentNode);
             cascadingCut(parentNodeOfCurrentNode);
         }
+        // Update the hashtable references
+        System.out.println("Update hashtable");
+        fibTable.replace(currentNode.hashtag, currentNode);
+        // Update max node if necessary
         if (currentNode.hashtagCountKey > maxNode.hashtagCountKey) {
             maxNode = currentNode;
         }
@@ -285,11 +295,41 @@ public class FibonacciHeap {
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             String currentLine = "";
             while ((currentLine = bufferedReader.readLine()) != null) {
+                boolean duplicateExists = false;
                 //System.out.println("Current Line: " + currentLine);
                 //parseFileIntoObject(currentLine);
                 hObj = parseFileIntoObject(hObj, currentLine);
-                System.out.println("Term: " + hObj.term + "\t Count: " + hObj.count);
-                insertNode(hObj.term, hObj.count);
+                //System.out.println("Term: " + hObj.term + "\t Count: " + hObj.count);
+                //insertNode(hObj.term, hObj.count);
+                
+                // Need to insert the first node
+                if (fibTable.isEmpty()) {
+                    //System.out.println("INSERTING Term: " + hObj.term + "\t Count: " + hObj.count);
+                    insertNode(hObj.term, hObj.count);
+                }
+                else {
+                    // Check to see if there is a duplicate hashtag and if the value needs to be updated
+                    // Update in tree and in hashtable
+                    Map.Entry<String, FibonacciNode> entry;
+                    Iterator<Map.Entry<String, FibonacciNode>> it;
+                    it = fibTable.entrySet().iterator();
+                    while (it.hasNext()) {
+                        entry = it.next();
+                        //System.out.println("Visiting " + entry.getKey());
+                        if (entry.getKey().equals(hObj.term)) {
+                            int newVal = entry.getValue().hashtagCountKey + hObj.count;
+                            System.out.println("UPDATING " + entry.getKey() + "," + entry.getValue().hashtagCountKey + " to " + newVal);
+                            increaseKey(entry.getValue(), newVal);
+                            duplicateExists = true;
+                        }
+                        /*else {
+                            insertNode(hObj.term, hObj.count);
+                        }*/
+                    }
+                }
+                if (duplicateExists == false) {
+                    insertNode(hObj.term, hObj.count);
+                }
             }
             bufferedReader.close();
         }
@@ -301,15 +341,15 @@ public class FibonacciHeap {
         System.out.println("Right Sibling: " + maxNode.rightSiblingNode.hashtag);*/
     }
     
-    /*public void parseFileIntoObject(String currentLine) {
-        HashtagObj hObj = new HashtagObj();
-        if (currentLine.contains("#")) {
-            String arr[] = currentLine.split(" ");
-            hObj.term = arr[0];
-            hObj.count = Integer.parseInt(arr[1]);
-            System.out.println("Term: " + hObj.term + "\t Count: " + hObj.count);
+    public void printHashtable() {
+        Map.Entry<String, FibonacciNode> entry;
+        Iterator<Map.Entry<String, FibonacciNode>> it;
+        it = fibTable.entrySet().iterator();
+        while (it.hasNext()) {
+            entry = it.next();
+            System.out.println(entry.getKey() + "\t" + entry.getValue().hashtagCountKey + "\t" + entry.getValue());
         }
-    }*/
+    }
     
     public HashtagObj parseFileIntoObject(HashtagObj hObj, String currentLine) {
         //HashtagObj hObj = new HashtagObj();

@@ -3,3 +3,6 @@
 #saturday 10
 #monday 2
 #reading 4
+#playing_games 2
+#saturday 6
+#sunday 8
