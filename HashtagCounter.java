@@ -14,7 +14,7 @@ public class HashtagCounter {
         String inputFile = args[0];
         FibonacciHeap fibHeap = new FibonacciHeap();
         fibHeap.readFile(inputFile);
-        fibHeap.printHashtable();
+        //fibHeap.printHashtable();
         //fibHeap.printPairwiseTable();
         //fibHeap.removeMax();
         //fibHeap.insertNode("#saturday", 10);
