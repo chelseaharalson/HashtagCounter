@@ -114,6 +114,7 @@ public class FibonacciHeap {
     
     public void removeMax() {
         System.out.println("OPERATION: REMOVING MAX");
+        //printHashtable();
         FibonacciNode currentNode = maxNode;
         if (currentNode != null) {
             int totalNumOfChildren = currentNode.degree;
