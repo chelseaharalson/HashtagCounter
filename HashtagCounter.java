@@ -16,8 +16,6 @@ public class HashtagCounter {
         fibHeap.readFile(inputFile);
         //fibHeap.printHashtable();
         //fibHeap.printPairwiseTable();
-        //fibHeap.removeMax();
-        //fibHeap.insertNode("#saturday", 10);
     }
     
 }

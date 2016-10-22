@@ -5,7 +5,7 @@
 public class FibonacciNode {
     int hashtagCountKey;
     String hashtag;
-    int degree;     // number of children
+    int degree;
     boolean markChildCut;
     FibonacciNode childNode;
     FibonacciNode leftSiblingNode;
@@ -18,9 +18,4 @@ public class FibonacciNode {
         leftSiblingNode = this;
         rightSiblingNode = this;
     }
-    
-    public int getKey() {
-        return this.hashtagCountKey;
-    }
-    
 }
