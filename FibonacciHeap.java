@@ -11,121 +11,118 @@ import java.util.*;
 public class FibonacciHeap {
     private FibonacciNode maxNode;
     private int numOfNodes;
-    private int maxDegree;
     Hashtable<String, FibonacciNode> fibTable = new Hashtable<String, FibonacciNode>();
-    ArrayList<FibonacciNode> removedNodes = new ArrayList<FibonacciNode>();
+    ArrayList<FibonacciNode> removedNodes = new ArrayList<FibonacciNode>();     // nodes that were removed from removeMax() and need to be inserted back in
     static String allHashtags = "";
     
     public FibonacciHeap() {
         maxNode = null;
-        maxDegree = 0;
     }
     
     // Insert works by creating a new heap with one element and then it gets added to the root list
     public void insertNode(String hashtag, int count) {
-        System.out.println("Inserting node: " + hashtag + "," + count);
-        FibonacciNode currentNode = new FibonacciNode(hashtag, count);
-        currentNode.hashtagCountKey = count;
+        System.out.println("INSERTING NODE: " + hashtag + "," + count);
+        FibonacciNode insertedNode = new FibonacciNode(hashtag, count);
+        insertedNode.hashtagCountKey = count;
         // Store node info in hashtable
         //System.out.println("Putting in hashtable: " + hashtag + "," + currentNode);
-        System.out.println("Insert in hashtable");
-        fibTable.put(hashtag, currentNode);
+        System.out.println("***Insert in hashtable");
+        fibTable.put(hashtag, insertedNode);
 
         // Finding max node
         if (maxNode != null) {
-            currentNode.leftSiblingNode = maxNode;
-            currentNode.rightSiblingNode = maxNode.rightSiblingNode;
-            maxNode.rightSiblingNode = currentNode;
-            currentNode.rightSiblingNode.leftSiblingNode = currentNode;
+            insertedNode.leftSiblingNode = maxNode;
+            insertedNode.rightSiblingNode = maxNode.rightSiblingNode;
+            maxNode.rightSiblingNode = insertedNode;
+            insertedNode.rightSiblingNode.leftSiblingNode = insertedNode;
             // The max pointer is updated if necessary
             if (count > maxNode.hashtagCountKey) {
-                maxNode = currentNode;
+                maxNode = insertedNode;
+                System.out.println("Max node was updated in insertNode() to " + maxNode.hashtag + "," + maxNode.hashtagCountKey);
             }
         }
         else {
-            maxNode = currentNode;     // This is for the first tree
+            maxNode = insertedNode;     // This is for the first tree (no node has been inserted yet, so no max)
         }
         numOfNodes++;
-        if (maxDegree < currentNode.degree) {
-            maxDegree = currentNode.degree;
-        }
-        //System.out.println("MAX NODE FROM INSERT: " + maxNode.hashtagCountKey);
+        //System.out.println("MAX NODE AFTER INSERTION: " + maxNode.hashtagCountKey);
     }
 
-    // If the heap order is not violated, increase the key of the node
-    // Otherwise, cut the tree rooted at the currentNode and meld into root list
-    public void increaseKey(FibonacciNode currentNode, int newVal) {
-        if (newVal < currentNode.hashtagCountKey) {
+    // If the heap order is not violated, increase/update the key of the node
+    // Otherwise, (NEED TO DO CASCADING CUT) cut the tree rooted at the currentNode and merge into root list
+    public void increaseKey(FibonacciNode currentNodeToBeUpdated, int newVal) {
+        if (newVal < currentNodeToBeUpdated.hashtagCountKey) {
             System.out.println("ERROR: The increase key was less than the original key.");
             return;
         }
-        currentNode.hashtagCountKey = newVal;
-        FibonacciNode parentNodeOfCurrentNode = currentNode.parentNode;
-        if ( (parentNodeOfCurrentNode != null) && (currentNode.hashtagCountKey > parentNodeOfCurrentNode.hashtagCountKey) ) {
-            cut(currentNode, parentNodeOfCurrentNode);
-            cascadingCut(parentNodeOfCurrentNode);
+        currentNodeToBeUpdated.hashtagCountKey = newVal;
+        FibonacciNode parentNodeOfCurrentNodeToBeUpdated = currentNodeToBeUpdated.parentNode;
+        // Checking if heap order is violated. If so, perform cascading cut.
+        if ( (parentNodeOfCurrentNodeToBeUpdated != null) && (currentNodeToBeUpdated.hashtagCountKey > parentNodeOfCurrentNodeToBeUpdated.hashtagCountKey) ) {
+            cut(currentNodeToBeUpdated, parentNodeOfCurrentNodeToBeUpdated);
+            cascadingCut(parentNodeOfCurrentNodeToBeUpdated);
         }
         // Update the hashtable references
-        System.out.println("Update hashtable");
-        fibTable.replace(currentNode.hashtag, currentNode);
+        System.out.println("***Update hashtable");
+        fibTable.replace(currentNodeToBeUpdated.hashtag, currentNodeToBeUpdated);
         // Update max node if necessary
-        if (currentNode.hashtagCountKey > maxNode.hashtagCountKey) {
-            maxNode = currentNode;
+        if (currentNodeToBeUpdated.hashtagCountKey > maxNode.hashtagCountKey) {
+            maxNode = currentNodeToBeUpdated;
         }
     }
     
-    public void cascadingCut(FibonacciNode tempParentNode) {
-        FibonacciNode tempNode = tempParentNode.parentNode;
-        if (tempNode != null) {
-            if (tempParentNode.markChildCut == false) {     // First time child is removed
-                tempParentNode.markChildCut = true;
+    public void cascadingCut(FibonacciNode currentNode) {
+        FibonacciNode parentNodeOfCurrentNode = currentNode.parentNode;
+        if (parentNodeOfCurrentNode != null) {
+            if (currentNode.markChildCut == false) {     // First time child is removed
+                currentNode.markChildCut = true;
             }
             else {
                 // If the node is marked, that means the parent has lost a child since it was made the child of its current parent
                 // Need to cut from current parent
                 // Cut it out and perform cascading cut again
-                cut(tempParentNode, tempNode);
-                cascadingCut(tempNode);
+                cut(currentNode, parentNodeOfCurrentNode);
+                cascadingCut(parentNodeOfCurrentNode);
             }
         }
     }
     
-    public void cut(FibonacciNode currentNode, FibonacciNode tempParentNode) {
+    public void cut(FibonacciNode cutChildNode, FibonacciNode parentNodeOfCutChildNode) {
         // Remove the cut child from the sibling list
-        currentNode.leftSiblingNode.rightSiblingNode = currentNode.rightSiblingNode;
-        currentNode.rightSiblingNode.leftSiblingNode = currentNode.leftSiblingNode;
-        tempParentNode.degree--;
-        // Reset tempParentNode.child if necessary
-        if (tempParentNode.childNode == currentNode) {
-            tempParentNode.childNode = currentNode.rightSiblingNode;
+        cutChildNode.leftSiblingNode.rightSiblingNode = cutChildNode.rightSiblingNode;
+        cutChildNode.rightSiblingNode.leftSiblingNode = cutChildNode.leftSiblingNode;
+        parentNodeOfCutChildNode.degree--;
+        // Reset parentNodeOfCutChildNode.childNode if necessary
+        if (parentNodeOfCutChildNode.childNode == cutChildNode) {
+            parentNodeOfCutChildNode.childNode = cutChildNode.rightSiblingNode;
         }
-        // In order to cut, degree needs to be at least 0
-        if (tempParentNode.degree == 0) {
-            tempParentNode.childNode = null;
+        // In order to cut, degree needs to be at least 0 / have children
+        if (parentNodeOfCutChildNode.degree == 0) {
+            parentNodeOfCutChildNode.childNode = null;
         }
         
-        // Insert the child that was cut from the root list
-        currentNode.leftSiblingNode = maxNode;
-        currentNode.rightSiblingNode = maxNode.rightSiblingNode;
-        maxNode.rightSiblingNode = currentNode;
-        currentNode.rightSiblingNode.leftSiblingNode = currentNode;
-        // Set parent of currentNode to null
-        currentNode.parentNode = null;
+        // Insert the child that was cut to the root list
+        cutChildNode.leftSiblingNode = maxNode;
+        cutChildNode.rightSiblingNode = maxNode.rightSiblingNode;
+        maxNode.rightSiblingNode = cutChildNode;
+        cutChildNode.rightSiblingNode.leftSiblingNode = cutChildNode;
+        // Set parent of currentNode to null since it is part of the root list now
+        cutChildNode.parentNode = null;
         // Set marked to false
-        currentNode.markChildCut = false;
+        cutChildNode.markChildCut = false;
     }
     
     public void removeMax() {
         System.out.println("OPERATION: REMOVING MAX");
         FibonacciNode currentNode = maxNode;
         if (currentNode != null) {
-            int numOfChildren = currentNode.degree;
+            int totalNumOfChildren = currentNode.degree;
             FibonacciNode childNodeOfCurrentNode = currentNode.childNode;
-            FibonacciNode tempRightNode;
+            FibonacciNode tempChildNode;
             
-            // for each child of the currentNode do:
-            while (numOfChildren > 0) {
-                tempRightNode = childNodeOfCurrentNode.rightSiblingNode;
+            // For each child of the currentNode do: (need to move up to the root list)
+            while (totalNumOfChildren > 0) {
+                tempChildNode = childNodeOfCurrentNode.rightSiblingNode;
                 // Remove child of currentNode from the child list
                 childNodeOfCurrentNode.leftSiblingNode.rightSiblingNode = childNodeOfCurrentNode.rightSiblingNode;
                 childNodeOfCurrentNode.rightSiblingNode.leftSiblingNode = childNodeOfCurrentNode.leftSiblingNode;
@@ -136,14 +133,15 @@ public class FibonacciHeap {
                 childNodeOfCurrentNode.rightSiblingNode.leftSiblingNode = childNodeOfCurrentNode;
                 // Set parent of the child of currentNode to null since it is now apart of the root list
                 childNodeOfCurrentNode.parentNode = null;
-                childNodeOfCurrentNode = tempRightNode;
-                numOfChildren--;
+                childNodeOfCurrentNode = tempChildNode;
+                totalNumOfChildren--;
             }
             
             // Remove currentNode from the root list and do pairwise combine
             currentNode.leftSiblingNode.rightSiblingNode = currentNode.rightSiblingNode;
             currentNode.rightSiblingNode.leftSiblingNode = currentNode.leftSiblingNode;
             
+            // Removing from hashtable
             System.out.println("Removed: " + maxNode.hashtagCountKey + ", " + maxNode.hashtag);
             fibTable.remove(maxNode.hashtag, maxNode);
             removedNodes.add(maxNode);
@@ -161,7 +159,7 @@ public class FibonacciHeap {
     
     public void pairwiseCombine() {
         System.out.println("OPERATION: PAIRWISECOMBINE");
-        double value = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);     // golden ratio
+        double value = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);     // golden ratio to find pairwise table size
 	int tableSize = ((int) Math.floor(Math.log(numOfNodes) * value)) + 1;
         ArrayList<FibonacciNode> pairwiseTable = new ArrayList<FibonacciNode>(tableSize);
         for (int i = 0; i < tableSize; i++) {
@@ -170,7 +168,7 @@ public class FibonacciHeap {
         
         int numOfRootNodes = 0;
         FibonacciNode currentNode = maxNode;
-        // Find number of root nodes
+        // Find number of root nodes for loop condition
         if (currentNode != null) {
             numOfRootNodes++;
             currentNode = currentNode.rightSiblingNode;
@@ -181,36 +179,28 @@ public class FibonacciHeap {
             }
         }
         
-        // for each node in the root list do:
+        // For each node in the root list do:
         while (numOfRootNodes > 0) {
             // Get current node's degree
             int currentDegree = currentNode.degree;
+            // Need to assign here because currentNode changes and need this to increment the loop
             FibonacciNode nextNode = currentNode.rightSiblingNode;
-            // See if there's another node with the same degree
+            // Check to see if there is another node with the same degree
             while (true) {
-                FibonacciNode currentNodeTableElement = pairwiseTable.get(currentDegree);
-                if (currentNodeTableElement == null) {
+                FibonacciNode currentNodePTableElement = pairwiseTable.get(currentDegree);
+                if (currentNodePTableElement == null) {
                     // There is no other node with that degree
                     break;
                 }
                 // There is a node with that degree, so make one of the nodes a child of the other (bigger one is parent node)
                 // Updating the max
-                if (currentNode.hashtagCountKey < currentNodeTableElement.hashtagCountKey) {
-                    FibonacciNode tempNode = currentNodeTableElement;
-                    currentNodeTableElement = currentNode;
+                if (currentNode.hashtagCountKey < currentNodePTableElement.hashtagCountKey) {
+                    FibonacciNode tempNode = currentNodePTableElement;
+                    currentNodePTableElement = currentNode;
                     currentNode = tempNode;
-                    // currentNodeTableElement is removed from the root list because it is becoming a child node of currentNode
-                    //merge(currentNodeTableElement, currentNode);
                 }
-                merge(currentNodeTableElement, currentNode);
-                /*else {
-                    // Updating the max
-                    FibonacciNode tempNode = currentNode;
-                    currentNode = currentNodeTableElement;
-                    currentNodeTableElement = tempNode;
-                    // currentNode is removed from the root list because it is becoming a child node of currentNodeTableElement
-                    merge(currentNode, currentNodeTableElement);
-                }*/
+                // currentNodePTableElement is removed from the root list because it is becoming a child node of currentNode
+                mergeNodes(currentNodePTableElement, currentNode);
                 
                 // Degree is handled so go to the next one
                 pairwiseTable.set(currentDegree, null);
@@ -250,32 +240,32 @@ public class FibonacciHeap {
         }
     }
 
-    public void merge(FibonacciNode currentNodeTableElement, FibonacciNode currentNode) {
-        // Remove currentNodeTableElement from root list
-        currentNodeTableElement.leftSiblingNode.rightSiblingNode = currentNodeTableElement.rightSiblingNode;
-        currentNodeTableElement.rightSiblingNode.leftSiblingNode = currentNodeTableElement.leftSiblingNode;
+    public void mergeNodes(FibonacciNode currentNodePTableElement, FibonacciNode currentNode) {
+        // Remove currentNodePTableElement from root list
+        currentNodePTableElement.leftSiblingNode.rightSiblingNode = currentNodePTableElement.rightSiblingNode;
+        currentNodePTableElement.rightSiblingNode.leftSiblingNode = currentNodePTableElement.leftSiblingNode;
         
         // Make currentNodeTableElement a child of currentNode
-        currentNodeTableElement.parentNode = currentNode;
+        currentNodePTableElement.parentNode = currentNode;
         
         if (currentNode.childNode == null) {
-            currentNode.childNode = currentNodeTableElement;
-            currentNodeTableElement.rightSiblingNode = currentNodeTableElement;
-            currentNodeTableElement.leftSiblingNode = currentNodeTableElement;
+            currentNode.childNode = currentNodePTableElement;
+            currentNodePTableElement.rightSiblingNode = currentNodePTableElement;
+            currentNodePTableElement.leftSiblingNode = currentNodePTableElement;
         }
         else {
-            currentNodeTableElement.leftSiblingNode = currentNode.childNode;
-            currentNodeTableElement.rightSiblingNode = currentNode.childNode.rightSiblingNode;
-            currentNode.childNode.rightSiblingNode = currentNodeTableElement;
-            currentNodeTableElement.rightSiblingNode.leftSiblingNode = currentNodeTableElement;
+            currentNodePTableElement.leftSiblingNode = currentNode.childNode;
+            currentNodePTableElement.rightSiblingNode = currentNode.childNode.rightSiblingNode;
+            currentNode.childNode.rightSiblingNode = currentNodePTableElement;
+            currentNodePTableElement.rightSiblingNode.leftSiblingNode = currentNodePTableElement;
         }
         
         // Increase degree
         currentNode.degree++;
-        currentNodeTableElement.markChildCut = false;
+        currentNodePTableElement.markChildCut = false;
         
-        System.out.println(currentNodeTableElement.hashtag + "," + currentNodeTableElement.hashtagCountKey + "," + currentNodeTableElement.degree
-                + " became a child of " + currentNode.hashtag + "," + currentNode.hashtagCountKey + "," + currentNode.degree);
+        System.out.println(currentNodePTableElement.hashtag + "," + currentNodePTableElement.hashtagCountKey + ", degree: " + currentNodePTableElement.degree
+                + " became a child of " + currentNode.hashtag + "," + currentNode.hashtagCountKey + ", degree: " + currentNode.degree);
     }
     
     public void printPairwiseTable() {
@@ -297,11 +287,6 @@ public class FibonacciHeap {
             String currentLine = "";
             while ((currentLine = bufferedReader.readLine()) != null) {
                 boolean duplicateExists = false;
-                //System.out.println("Current Line: " + currentLine);
-                //parseFileIntoObject(currentLine);
-                //hObj = parseFileIntoObject(hObj, currentLine);
-                //System.out.println("Term: " + hObj.term + "\t Count: " + hObj.count);
-                //insertNode(hObj.term, hObj.count);
                 if (currentLine.startsWith("#")) {
                     hObj = parseFileIntoObject(hObj, currentLine);
                     // Need to insert the first node
@@ -311,7 +296,7 @@ public class FibonacciHeap {
                     }
                     else {
                         // Check to see if there is a duplicate hashtag and if the value needs to be updated
-                        // Update in tree and in hashtable
+                        // Update in heap and in hashtable
                         Map.Entry<String, FibonacciNode> entry;
                         Iterator<Map.Entry<String, FibonacciNode>> it;
                         it = fibTable.entrySet().iterator();
